@@ -1,0 +1,9 @@
+## Visual Studio
+.vs/
+*.vsidx
+*.slnx
+bin/
+obj/
+
+## ASP.NET
+wwwroot/lib/
