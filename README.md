@@ -1,2 +1,2 @@
-# TMS
+# PMS
 A Project Management System
