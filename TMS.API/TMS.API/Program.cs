@@ -3,9 +3,9 @@ using System;
 
 public class Program
 {
-    public static void Main(String[] args)
+    public static void Main(string[] args)
     {
-        var name = "Fuck that its actually running";
+        var name = "";
         Console.WriteLine(name);
 
     }

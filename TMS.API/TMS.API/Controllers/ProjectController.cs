@@ -2,7 +2,7 @@
 
 namespace TMS.API.Controllers
 {
-    public class TaskController : Controller
+    public class ProjectController : Controller
     {
         public IActionResult Index()
         {
