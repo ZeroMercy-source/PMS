@@ -1,11 +1,12 @@
 ﻿namespace PMS.Api.Models
 {
-    public class Task : WorkItems
+    public class ATask : WorkItems
     {
-        public List<SubTask> SubTasks = new List<SubTask>();
+        public List<SubTask> SubTasks { get; set; } = new List<SubTask>();
+        public List<SubTask> DeletedSubTasks { get; set; } = new List<SubTask>();
         public int ProjectId { get; set; }
 
-
+        public MyEnum.Priority Priority { get; set; }
     }
 
     public class SubTask : WorkItems
