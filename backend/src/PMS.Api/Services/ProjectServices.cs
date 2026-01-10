@@ -39,7 +39,12 @@ namespace PMS.Api.Services
 
         }
 
-        public bool EditProject(int id, string title, string description, MyEnum status, MyEnum priority)
+        public bool EditProject(int id, 
+            string title, 
+            string description, 
+            MyEnum.Status? status, 
+            MyEnum.Priority? priority
+            )
         {
             Project? project = user1.Projects.Find(p => p.Id == id);
 
@@ -47,20 +52,40 @@ namespace PMS.Api.Services
 
             if(project == null)
             {
-                flag = false;
+               return false;
             }
 
             if (!string.IsNullOrWhiteSpace(title))
             {
                  ProjectDomain.EditProjectTitle(project, title);
+                flag = true;
             }
             if (!string.IsNullOrWhiteSpace(description))
             {
                ProjectDomain.EditProjectDescription(project, description);
+                flag = true;
             }
-            if ()
+            if (status.HasValue)
+            {
+              
+                ProjectDomain.ChangeProjectStatus(project, status.Value);
+                flag = true;
+                    
+            }
+            if (priority.HasValue)
+            {
 
-            return flag
+                ProjectDomain.ChangeProjectPriority(project, priority.Value);
+                flag = true;
+
+            }
+
+            return flag;
+        }
+
+        public static void PermDeleteProject(User user)
+        {
+            user.DeletedProjects.RemoveAll(Project => (DateTime.UtcNow - Project.DeletedAt).TotalHours > 72);
         }
 
     }

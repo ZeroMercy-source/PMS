@@ -26,28 +26,36 @@ namespace PMS.Api.Domain
             return user.Projects.Remove(project);
         }
 
-        public static void PermDeleteProject(User user, Project project)
+    
+
+        public static void EditProjectTitle(Project project, string title)
         {
-            user.DeletedProjects.RemoveAll(Project => (DateTime.UtcNow - Project.DeletedAt).TotalHours > 72);
+             project.Title = title;
         }
 
-        public static string EditProjectTitle(Project project, string title)
+        public static void EditProjectDescription(Project project, string description)
         {
-            project.Title = title;
-        }
-
-        public static string EditProjectDescription(Project project, string description)
-        {
-            return project.Description = description;
+            project.Description = description;
         }
 
         public static void ChangeProjectStatus(Project project, MyEnum.Status status)
         {
+
+            if (!Enum.IsDefined(typeof(MyEnum.Status), status))
+            {
+                throw new ArgumentException("Invalid Status Change");
+            }
+
             project.Status = status;
         }
 
         public static void ChangeProjectPriority(Project project, MyEnum.Priority priority)
         {
+            if (!Enum.IsDefined(typeof(MyEnum.Priority), priority))
+            {
+                throw new ArgumentException("Invalid Priority Change");
+            }
+
             project.Priority = priority;
         }
 

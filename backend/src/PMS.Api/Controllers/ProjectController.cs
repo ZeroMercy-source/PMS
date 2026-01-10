@@ -47,25 +47,42 @@ namespace PMS.Api.Controllers
             bool deleted = _projectService.DeleteProject(id);
             if (deleted)
             {
-                return Ok(deleted);
+                return NoContent();
                 
             }
             return NotFound();
 
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
         public IActionResult EditProject(int id, [FromBody] UpdateProjectRequest update)
         {
-            bool updated = _projectService.EditProject(id, update.Title, update.Description);
 
-            if (updated)
+            try
             {
-                return Ok(updated);
+
+                bool updated = _projectService.EditProject(
+                    id,
+                    update.Title,
+                    update.Description,
+                    update.Priority,
+                    update.Status
+                    );
+
+                if (updated)
+                {
+                    return NoContent();
+                }
+
+                return NotFound();
             }
 
-            return NotFound();
-        }
 
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+     
     }
 }
