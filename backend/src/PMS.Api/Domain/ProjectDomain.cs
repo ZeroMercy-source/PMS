@@ -6,29 +6,24 @@ namespace PMS.Api.Domain
     public class ProjectDomain
     {
 
-        public static void CreateProject(User user, Project project,
-            int Id,
-            string Title = "First Task",
-            string Description = "No Description",
-            MyEnum.Status Status = MyEnum.Status.InProgress, MyEnum.Priority Priority = MyEnum.Priority.Low)
+        public static Project CreateProject(User user, int id, string title, string description)
         {
-            user.Projects.Add(
-            new Project
-            {
-                Title = Title,
-                Description = Description,
-                Id = Id,
-                Status = Status,
-                Priority = Priority
-            });
+            Project project = new Project();
+            project.Status = MyEnum.Status.InProgress;
+            project.Priority = MyEnum.Priority.Low;
+            project.Id = id;
+            project.Title = title;
+            project.Description = description;
+            user.Projects.Add(project);
 
+            return project;
         }
 
-        public static void DeleteProject(User user, Project project)
+        public static bool DeleteProject(User user,Project project)
         {
             project.DeletedAt = DateTime.UtcNow;
             user.DeletedProjects.Add(project);
-            user.Projects.Remove(project);
+            return user.Projects.Remove(project);
         }
 
         public static void PermDeleteProject(User user, Project project)
@@ -36,22 +31,22 @@ namespace PMS.Api.Domain
             user.DeletedProjects.RemoveAll(Project => (DateTime.UtcNow - Project.DeletedAt).TotalHours > 72);
         }
 
-        public static void EditTaskTitle(Project project, string title)
+        public static string EditProjectTitle(Project project, string title)
         {
             project.Title = title;
         }
 
-        public static void EditTaskDescription(Project project, string description)
+        public static string EditProjectDescription(Project project, string description)
         {
-            project.Description = description;
+            return project.Description = description;
         }
 
-        public static void ChangeTaskStatus(Project project, MyEnum.Status status)
+        public static void ChangeProjectStatus(Project project, MyEnum.Status status)
         {
             project.Status = status;
         }
 
-        public static void ChangeTaskPriority(Project project, MyEnum.Priority priority)
+        public static void ChangeProjectPriority(Project project, MyEnum.Priority priority)
         {
             project.Priority = priority;
         }

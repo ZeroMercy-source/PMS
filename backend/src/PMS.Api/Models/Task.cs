@@ -9,14 +9,5 @@
         public MyEnum.Priority Priority { get; set; }
     }
 
-    public class SubTask : WorkItems
-    {
-      
-
-        public int TaskId { get; set; } 
-
-     
-
-
-    }
+    
 }
