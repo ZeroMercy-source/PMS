@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.OpenApi;
 using PMS.Api.Dtos;
 using PMS.Api.Models;
 using PMS.Api.Services;
@@ -8,29 +6,30 @@ using PMS.Api.Services;
 namespace PMS.Api.Controllers
 {
     [ApiController]
-    [Route("projects")]
-    public class ProjectController : Controller
+    [Route("projects/{projectId}/tasks")]
+    public class TaskController : Controller
     {
-        private readonly ProjectServices _projectService;
+/*
+        private readonly TaskServices _taskService;
 
-        public ProjectController(ProjectServices projectService)
+        public TaskController(TaskServices taskService)
         {
-            _projectService = projectService;
+            _taskService = taskService;
         }
 
         [HttpGet]
-        public IActionResult GetProjectsList(string? search, string? sort, MyEnum.Priority? priority, MyEnum.Status? status)
+        public IActionResult GetTaskList()
         {
-          
-            List<Project> projects = _projectService.GetProjects(search, sort, priority, status);
+
+            List<Project> projects = _projectService.GetProjects();
             return Ok(projects);
         }
 
         [HttpGet("{id}")]
         public IActionResult GetProject(int id)
         {
-            
-            Project? project = _projectService.GetProjectById(id);
+
+            Project project = _projectService.GetProjectById(id);
             if (project == null) return NotFound();
             return Ok(project);
         }
@@ -38,14 +37,9 @@ namespace PMS.Api.Controllers
         [HttpPost]
         public IActionResult CreateProject([FromBody] CreateProjectRequest create)
         {
-            
-            if (string.IsNullOrWhiteSpace(create.Title) || string.IsNullOrWhiteSpace(create.Description))
-            {
-                return BadRequest("Project Needs a Title and Description to be Created");
-            }
-                
+
             return Ok(_projectService.CreateProject(create.Title, create.Description));
-            
+
         }
 
         [HttpDelete("{id}")]
@@ -55,7 +49,7 @@ namespace PMS.Api.Controllers
             if (deleted)
             {
                 return NoContent();
-                
+
             }
             return NotFound();
 
@@ -72,8 +66,8 @@ namespace PMS.Api.Controllers
                     id,
                     update.Title,
                     update.Description,
-                    update.Status,
-                    update.Priority
+                    update.Priority,
+                    update.Status
                     );
 
                 if (updated)
@@ -89,7 +83,9 @@ namespace PMS.Api.Controllers
             {
                 return BadRequest(ex.Message);
             }
+        */
+
         }
-     
+    
     }
-}
+
