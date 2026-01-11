@@ -4,6 +4,7 @@ using Microsoft.OpenApi;
 using PMS.Api.Domain;
 using PMS.Api.Models;
 using System.Runtime.Intrinsics.X86;
+using System.Threading.Tasks;
 
 namespace PMS.Api.Services
 {
@@ -13,13 +14,12 @@ namespace PMS.Api.Services
 
         public ProjectServices()
         {
-            user1.Projects.Add(new Project { Id = 1, Title = "Seed 1", Description = "Seed desc" });
-            user1.Projects.Add(new Project { Id = 2, Title = "Seed 2", Description = "Seed desc" });
+            
         }
 
         public List<Project> GetProjects(string? search, string? filter, MyEnum.Priority? priority, MyEnum.Status? status)
         {
-            IEnumerable<Project> projects = user1.Projects;
+            IEnumerable<Project> projects = user1.Projects.Where(p => !p.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -71,18 +71,39 @@ namespace PMS.Api.Services
             return ProjectDomain.CreateProject(user1, id, title, description);
         
         }
+
+        public List<Project> GetDeletedProjects()
+        {
+            return user1.Projects.Where(p => p.IsDeleted).ToList();
+        }
+
+
         public bool DeleteProject(int id) 
         {
-         
-            Project? project = user1.Projects.Find(p => p.Id == id);
 
+            var ProjectToDelete = user1.Projects.Find(p => p.Id == id);
+            if (ProjectToDelete == null)
+            {
+                return false;
+            }
+
+            ProjectToDelete.IsDeleted = true;
+            ProjectToDelete.DeletedAt = DateTime.UtcNow;
+            return true;
+
+        }
+
+        public bool RestoreProject(int id)
+        {
+            var project = user1.Projects.FirstOrDefault(p => p.Id == id && p.IsDeleted);
             if (project == null)
             {
                 return false;
             }
 
-            return ProjectDomain.DeleteProject(user1, project);
+            project.IsDeleted = false;
 
+            return true;
         }
 
         public bool EditProject(int id, 
@@ -132,6 +153,7 @@ namespace PMS.Api.Services
         public static void PermDeleteProject(User user)
         {
             user.DeletedProjects.RemoveAll(Project => (DateTime.UtcNow - Project.DeletedAt).TotalHours > 72);
+
         }
 
     }

@@ -1,7 +1,13 @@
-using System;
+using Microsoft.EntityFrameworkCore;
+using PMS.Api.Data;
 using PMS.Api.Services;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<PmsDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

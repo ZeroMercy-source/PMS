@@ -23,8 +23,19 @@ namespace PMS.Api.Controllers
         {
           
             List<Project> projects = _projectService.GetProjects(search, sort, priority, status);
+
             return Ok(projects);
         }
+
+        [HttpGet("deleted")]
+        public IActionResult GetDeletedProjects()
+        {
+            List<Project> DeletedProjects = _projectService.GetDeletedProjects();
+
+            return Ok(DeletedProjects);
+        }
+
+
 
         [HttpGet("{id}")]
         public IActionResult GetProject(int id)
@@ -60,6 +71,20 @@ namespace PMS.Api.Controllers
             return NotFound();
 
         }
+
+
+        [HttpPatch("{id}/restore")]
+        public IActionResult RestoreProject(int id)
+        {
+            bool restored = _projectService.RestoreProject(id);
+            if (restored)
+            {
+                return NoContent();
+            }
+            return NotFound();
+        }
+
+
 
         [HttpPatch("{id}")]
         public IActionResult EditProject(int id, [FromBody] UpdateProjectRequest update)

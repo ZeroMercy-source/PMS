@@ -28,14 +28,14 @@ namespace PMS.Api.Domain
         public static void DeleteSubTask(ATask task, SubTask subtask)
         {
                 subtask.DeletedAt = DateTime.UtcNow;
-                task.DeletedSubTasks.Add(subtask);
+             //   task.DeletedSubTasks.Add(subtask);
                 task.SubTasks.Remove(subtask);      
         }
 
 
         public static void PermDeleteSubTask(ATask task)
         {
-            task.DeletedSubTasks.RemoveAll(SubTask => (DateTime.UtcNow - SubTask.DeletedAt).TotalHours > 72);
+          //  task.DeletedSubTasks.RemoveAll(SubTask => (DateTime.UtcNow - SubTask.DeletedAt).TotalHours > 72);
         }
        
 
