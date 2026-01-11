@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PMS.Api.Data;
 
@@ -11,9 +12,11 @@ using PMS.Api.Data;
 namespace PMS.Api.Migrations
 {
     [DbContext(typeof(PmsDbContext))]
-    partial class PmsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260111071616_Subtask-task")]
+    partial class Subtasktask
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -150,13 +153,6 @@ namespace PMS.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Default User"
-                        });
                 });
 
             modelBuilder.Entity("PMS.Api.Models.ATask", b =>

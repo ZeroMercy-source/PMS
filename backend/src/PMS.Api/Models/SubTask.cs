@@ -1,9 +1,12 @@
-﻿namespace PMS.Api.Models
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace PMS.Api.Models
 {
+    [Index(nameof(ATaskId), nameof(IsDeleted))]
     public class SubTask : WorkItems
     {
 
-        public int TaskId { get; set; }
+        public int ATaskId { get; set; }
 
 
     }

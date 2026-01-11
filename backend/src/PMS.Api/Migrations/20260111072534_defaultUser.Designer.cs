@@ -12,8 +12,8 @@ using PMS.Api.Data;
 namespace PMS.Api.Migrations
 {
     [DbContext(typeof(PmsDbContext))]
-    [Migration("20260111044418_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260111072534_defaultUser")]
+    partial class defaultUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -58,7 +58,7 @@ namespace PMS.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("ProjectId", "IsDeleted");
 
                     b.ToTable("Tasks");
                 });
@@ -91,7 +91,14 @@ namespace PMS.Api.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("IsDeleted", "Priority");
+
+                    b.HasIndex("UserId", "IsDeleted");
 
                     b.ToTable("Projects");
                 });
@@ -104,7 +111,7 @@ namespace PMS.Api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("ATaskId")
+                    b.Property<int>("ATaskId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("DeletedAt")
@@ -120,35 +127,39 @@ namespace PMS.Api.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<int>("TaskId")
-                        .HasColumnType("int");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ATaskId");
+                    b.HasIndex("ATaskId", "IsDeleted");
 
                     b.ToTable("SubTasks");
                 });
 
             modelBuilder.Entity("PMS.Api.Models.User", b =>
                 {
-                    b.Property<int>("id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("id");
+                    b.HasKey("Id");
 
-                    b.ToTable("users");
+                    b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Default User"
+                        });
                 });
 
             modelBuilder.Entity("PMS.Api.Models.ATask", b =>
@@ -160,11 +171,22 @@ namespace PMS.Api.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("PMS.Api.Models.Project", b =>
+                {
+                    b.HasOne("PMS.Api.Models.User", null)
+                        .WithMany("Projects")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("PMS.Api.Models.SubTask", b =>
                 {
                     b.HasOne("PMS.Api.Models.ATask", null)
                         .WithMany("SubTasks")
-                        .HasForeignKey("ATaskId");
+                        .HasForeignKey("ATaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("PMS.Api.Models.ATask", b =>
@@ -175,6 +197,11 @@ namespace PMS.Api.Migrations
             modelBuilder.Entity("PMS.Api.Models.Project", b =>
                 {
                     b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("PMS.Api.Models.User", b =>
+                {
+                    b.Navigation("Projects");
                 });
 #pragma warning restore 612, 618
         }

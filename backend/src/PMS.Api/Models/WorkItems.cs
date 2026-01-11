@@ -8,8 +8,5 @@
         public string Description { get; set; } = "No Description";
         public int Id { get; set; }
         public MyEnum.Status Status { get; set; }
-        
-
-
     }
 }

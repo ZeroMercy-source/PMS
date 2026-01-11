@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.OpenApi;
 using PMS.Api.Dtos;
 using PMS.Api.Models;
 using PMS.Api.Services;

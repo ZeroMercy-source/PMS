@@ -1,34 +1,34 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.OpenApi;
+﻿using Microsoft.EntityFrameworkCore;
+using PMS.Api.Data;
 using PMS.Api.Domain;
 using PMS.Api.Models;
-using System.Runtime.Intrinsics.X86;
-using System.Threading.Tasks;
 
 namespace PMS.Api.Services
 {
     public class ProjectServices
     {
-        private readonly User user1 = new User();
+        private readonly PmsDbContext _context;
 
-        public ProjectServices()
+        public ProjectServices(PmsDbContext context)
         {
-            
+            _context = context;
         }
 
         public List<Project> GetProjects(string? search, string? filter, MyEnum.Priority? priority, MyEnum.Status? status)
         {
-            IEnumerable<Project> projects = user1.Projects.Where(p => !p.IsDeleted);
+            IQueryable<Project> projects = _context.Projects
+                .Include(p => p.Tasks)
+                .Where(p => !p.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
+                string lowerSearch = search.ToLower();
                 projects = projects.Where(p =>
-                    (p.Title ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                    (p.Description ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    (p.Title ?? "").ToLower().Contains(lowerSearch) ||
+                    (p.Description ?? "").ToLower().Contains(lowerSearch) ||
                     (p.Tasks != null && p.Tasks.Any(t =>
-                        (t.Title ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                        (t.Description ?? "").Contains(search, StringComparison.OrdinalIgnoreCase)
+                        (t.Title ?? "").ToLower().Contains(lowerSearch) ||
+                        (t.Description ?? "").ToLower().Contains(lowerSearch)
                     ))
                 );
             }
@@ -60,48 +60,62 @@ namespace PMS.Api.Services
 
         public Project? GetProjectById(int id)
         {
-            return user1.Projects.FirstOrDefault(p => p.Id == id);
+            return _context.Projects
+                .Include(p => p.Tasks)
+                    .ThenInclude(t => t.SubTasks)
+                .FirstOrDefault(p => p.Id == id && !p.IsDeleted);
         }
 
         public Project CreateProject(string title, string description)
         {
-
-            int id = user1.Projects.Count + 1;
+            var project = new Project
+            {
+                Title = title,
+                Description = description,
+                Status = MyEnum.Status.InProgress,
+                Priority = MyEnum.Priority.Low,
+                UserId = 1,
+                IsDeleted = false,
+                DeletedAt = DateTime.MinValue
+            };
             
-            return ProjectDomain.CreateProject(user1, id, title, description);
-        
+            _context.Projects.Add(project);
+            _context.SaveChanges();
+            
+            return project;
         }
 
         public List<Project> GetDeletedProjects()
         {
-            return user1.Projects.Where(p => p.IsDeleted).ToList();
+            return _context.Projects.Where(p => p.IsDeleted).ToList();
         }
 
 
         public bool DeleteProject(int id) 
         {
-
-            var ProjectToDelete = user1.Projects.Find(p => p.Id == id);
-            if (ProjectToDelete == null)
+            var projectToDelete = _context.Projects.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
+            if (projectToDelete == null)
             {
                 return false;
             }
 
-            ProjectToDelete.IsDeleted = true;
-            ProjectToDelete.DeletedAt = DateTime.UtcNow;
+            projectToDelete.IsDeleted = true;
+            projectToDelete.DeletedAt = DateTime.UtcNow;
+            _context.SaveChanges();
+            
             return true;
-
         }
 
         public bool RestoreProject(int id)
         {
-            var project = user1.Projects.FirstOrDefault(p => p.Id == id && p.IsDeleted);
+            var project = _context.Projects.FirstOrDefault(p => p.Id == id && p.IsDeleted);
             if (project == null)
             {
                 return false;
             }
 
             project.IsDeleted = false;
+            _context.SaveChanges();
 
             return true;
         }
@@ -113,7 +127,7 @@ namespace PMS.Api.Services
             MyEnum.Priority? priority
             )
         {
-            Project? project = user1.Projects.Find(p => p.Id == id);
+            Project? project = _context.Projects.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
 
             bool flag = false;
 
@@ -147,13 +161,22 @@ namespace PMS.Api.Services
 
             }
 
+            if (flag)
+            {
+                _context.SaveChanges();
+            }
+
             return flag;
         }
 
-        public static void PermDeleteProject(User user)
+        public void PermDeleteProject()
         {
-            user.DeletedProjects.RemoveAll(Project => (DateTime.UtcNow - Project.DeletedAt).TotalHours > 72);
-
+            var projectsToDelete = _context.Projects
+                .Where(p => p.IsDeleted && (DateTime.UtcNow - p.DeletedAt).TotalHours > 72)
+                .ToList();
+            
+            _context.Projects.RemoveRange(projectsToDelete);
+            _context.SaveChanges();
         }
 
     }

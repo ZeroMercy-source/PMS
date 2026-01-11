@@ -19,14 +19,7 @@ namespace PMS.Api.Domain
             return project;
         }
 
-        public static bool DeleteProject(User user,Project project)
-        {
-            project.DeletedAt = DateTime.UtcNow;
-            user.DeletedProjects.Add(project);
-            return user.Projects.Remove(project);
-        }
-
-    
+       
 
         public static void EditProjectTitle(Project project, string title)
         {
