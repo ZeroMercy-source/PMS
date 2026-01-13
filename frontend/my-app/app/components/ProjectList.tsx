@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import DeleteProjectButton from "./DeleteProjectButton"
-
+import EditProjectButton from "./EditProjectButton"
 type Project = {
   Id: number
   Title: string
@@ -132,6 +132,7 @@ export default function ProjectList() {
 
             <div className="flex items-center justify-between">
               <Badge variant="outline">{p.Priority}</Badge>
+              <EditProjectButton project={p} />
               <DeleteProjectButton id={p.Id} />
             </div>
           </CardContent>
