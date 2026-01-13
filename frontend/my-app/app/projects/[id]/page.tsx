@@ -1,24 +1,20 @@
-import { getProjectById } from "../../../lib/api";
+import CreateTask from "./CreateTask";
+import TaskList from "./TaskList";
 
 export default async function ProjectPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;          
+  const { id } = await params;
   const projectId = Number(id);
 
-  if (!Number.isFinite(projectId)) {
-    return <div>Invalid project id.</div>;
-  }
-
-  const project = await getProjectById(projectId);
+  if (!Number.isFinite(projectId)) return <div>Invalid project id.</div>;
 
   return (
     <main>
-      <h1>Project Details</h1>
-      <h1>{project.title}</h1>
-      {project.description ? <p>{project.description}</p> : null}
+      <CreateTask projectId={projectId} />
+      <TaskList projectId={projectId} />
     </main>
   );
 }

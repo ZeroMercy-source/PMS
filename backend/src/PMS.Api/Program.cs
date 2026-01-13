@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<PmsDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Get allowed origins from configuration
+
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
     ?? new[] { "http://localhost:3000" };
 
