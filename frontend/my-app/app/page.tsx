@@ -5,7 +5,7 @@ import ProjectList from "./components/ProjectList"
 export default function Home() {
   return (
     <main className="min-h-screen bg-muted/40">
-      <Navbar />
+      
 
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div className="flex items-start justify-between gap-4">
@@ -26,3 +26,5 @@ export default function Home() {
     </main>
   )
 }
+
+

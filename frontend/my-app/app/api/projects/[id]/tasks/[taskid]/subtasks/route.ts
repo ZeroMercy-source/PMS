@@ -1,24 +1,20 @@
-// app/api/projects/[id]/tasks/[taskId]/route.ts
-
+// app/api/projects/[id]/tasks/[taskId]/subtasks/route.ts
 const API_BASE_URL = process.env.API_BASE_URL
 
 function missingBaseUrl() {
   return new Response("API_BASE_URL is missing in .env.local", { status: 500 })
 }
 
-export async function PATCH(
-  req: Request,
+export async function GET(
+  _req: Request,
   { params }: { params: Promise<{ id: string; taskId: string }> }
 ) {
   if (!API_BASE_URL) return missingBaseUrl()
 
   const { id, taskId } = await params
-  const body = await req.json()
 
-  const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+  const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}/subtasks`, {
+    cache: "no-store",
   })
 
   if (res.status === 204) return new Response(null, { status: 204 })
@@ -30,16 +26,19 @@ export async function PATCH(
   })
 }
 
-export async function DELETE(
-  _req: Request,
+export async function POST(
+  req: Request,
   { params }: { params: Promise<{ id: string; taskId: string }> }
 ) {
   if (!API_BASE_URL) return missingBaseUrl()
 
   const { id, taskId } = await params
+  const body = await req.json()
 
-  const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}`, {
-    method: "DELETE",
+  const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}/subtasks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   })
 
   if (res.status === 204) return new Response(null, { status: 204 })

@@ -1,11 +1,12 @@
 "use client"
-
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import DeleteProjectButton from "./DeleteProjectButton"
 import EditProjectButton from "./EditProjectButton"
+
 type Project = {
   Id: number
   Title: string
@@ -120,7 +121,11 @@ export default function ProjectList() {
         <Card key={p.Id} className="transition-all hover:shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between gap-3">
-              <CardTitle className="text-base leading-6">{p.Title}</CardTitle>
+              <CardTitle className="text-base leading-6">
+                    <Link href={`/projects/${p.Id}`} className="hover:underline">
+                    {p.Title}
+                    </Link>
+                </CardTitle>
               <Badge variant="secondary">{p.Status}</Badge>
             </div>
           </CardHeader>

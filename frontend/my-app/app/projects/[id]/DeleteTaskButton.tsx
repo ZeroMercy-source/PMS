@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
 
 export default function DeleteTaskButton({
   projectId,
@@ -28,7 +29,8 @@ export default function DeleteTaskButton({
         throw new Error(text || `HTTP ${res.status}`)
       }
 
-      location.reload()
+      window.dispatchEvent(new Event("tasks:changed"))
+      window.dispatchEvent(new Event("projects:changed"))
     } catch (e: any) {
       alert(e?.message ?? "Failed to delete task")
     } finally {
@@ -37,8 +39,13 @@ export default function DeleteTaskButton({
   }
 
   return (
-    <button onClick={del} disabled={loading}>
+    <Button
+      variant="destructive"
+      size="sm"
+      onClick={del}
+      disabled={loading}
+    >
       {loading ? "Deleting..." : "Delete"}
-    </button>
+    </Button>
   )
 }

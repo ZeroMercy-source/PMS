@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,22 +20,38 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-type Status = "ToDO" | "InProgress" | "Done"
+type Status = "ToDO" | "InProgress" | "Done" | "Deleted"
 type Priority = "Low" | "Medium" | "High" | "Urgent"
 
-const statusMap = { ToDO: 0, InProgress: 1, Done: 2 } as const
+type Task = {
+  Id: number
+  ProjectId: number
+  Title: string
+  Description: string
+  Status: Status | string
+  Priority: Priority | string
+}
+
+const statusMap = { ToDO: 0, InProgress: 1, Done: 2, Deleted: 3 } as const
 const priorityMap = { Low: 0, Medium: 1, High: 2, Urgent: 3 } as const
 
-export default function CreateTask({ projectId }: { projectId: number }) {
-  const router = useRouter()
-
+export default function EditTaskButton({ task }: { task: Task }) {
   const [open, setOpen] = useState(false)
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [status, setStatus] = useState<Status>("ToDO")
-  const [priority, setPriority] = useState<Priority>("Medium")
+
+  const [title, setTitle] = useState(task.Title ?? "")
+  const [description, setDescription] = useState(task.Description ?? "")
+  const [status, setStatus] = useState<Status>((task.Status as Status) ?? "ToDO")
+  const [priority, setPriority] = useState<Priority>((task.Priority as Priority) ?? "Medium")
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  useEffect(() => {
+    setTitle(task.Title ?? "")
+    setDescription(task.Description ?? "")
+    setStatus((task.Status as Status) ?? "ToDO")
+    setPriority((task.Priority as Priority) ?? "Medium")
+  }, [task])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -50,8 +65,8 @@ export default function CreateTask({ projectId }: { projectId: number }) {
     try {
       setLoading(true)
 
-      const res = await fetch(`/api/projects/${projectId}/tasks`, {
-        method: "POST",
+      const res = await fetch(`/api/projects/${task.ProjectId}/tasks/${task.Id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
@@ -66,16 +81,11 @@ export default function CreateTask({ projectId }: { projectId: number }) {
         throw new Error(text || `HTTP ${res.status}`)
       }
 
-      setTitle("")
-      setDescription("")
-      setStatus("ToDO")
-      setPriority("Medium")
       setOpen(false)
-
-      router.refresh()
       window.dispatchEvent(new Event("tasks:changed"))
+      window.dispatchEvent(new Event("projects:changed"))
     } catch (e: any) {
-      setError(e?.message ?? "Failed to create task. Try again.")
+      setError(e?.message ?? "Failed to update task. Try again.")
     } finally {
       setLoading(false)
     }
@@ -84,32 +94,34 @@ export default function CreateTask({ projectId }: { projectId: number }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New Task</Button>
+        <Button variant="secondary" size="sm">
+          Edit
+        </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create task</DialogTitle>
+          <DialogTitle>Edit task</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor={`task-title-${projectId}`}>Title</Label>
+            <Label htmlFor={`task-title-${task.Id}`}>Title</Label>
             <Input
-              id={`task-title-${projectId}`}
+              id={`task-title-${task.Id}`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Add delete endpoint"
+              placeholder="Task title"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`task-description-${projectId}`}>Description</Label>
+            <Label htmlFor={`task-desc-${task.Id}`}>Description</Label>
             <Textarea
-              id={`task-description-${projectId}`}
+              id={`task-desc-${task.Id}`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Short description (optional)"
+              placeholder="Task description"
               className="min-h-[100px]"
             />
           </div>
@@ -119,7 +131,7 @@ export default function CreateTask({ projectId }: { projectId: number }) {
               <Label>Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as Status)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ToDO">To Do</SelectItem>
@@ -133,7 +145,7 @@ export default function CreateTask({ projectId }: { projectId: number }) {
               <Label>Priority</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select priority" />
+                  <SelectValue placeholder="Priority" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Low">Low</SelectItem>
@@ -157,7 +169,7 @@ export default function CreateTask({ projectId }: { projectId: number }) {
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create"}
+              {loading ? "Saving..." : "Save"}
             </Button>
           </div>
         </form>
