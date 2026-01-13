@@ -20,6 +20,7 @@ export default function DeleteProjectButton({ id }: { id: number }) {
       }
 
       router.refresh()
+      window.dispatchEvent(new Event("projects:changed"))
     } catch (e: any) {
       alert(e?.message ?? "Failed to delete")
     } finally {
@@ -28,12 +29,7 @@ export default function DeleteProjectButton({ id }: { id: number }) {
   }
 
   return (
-    <Button
-      variant="destructive"
-      size="sm"
-      onClick={del}
-      disabled={loading}
-    >
+    <Button variant="destructive" size="sm" onClick={del} disabled={loading}>
       {loading ? "Deleting..." : "Delete"}
     </Button>
   )

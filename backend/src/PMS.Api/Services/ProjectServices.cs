@@ -91,18 +91,21 @@ namespace PMS.Api.Services
         }
 
 
-        public bool DeleteProject(int id) 
+        public bool DeleteProject(int id)
         {
-            var projectToDelete = _context.Projects.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
-            if (projectToDelete == null)
+            var project = _context.Projects.FirstOrDefault(p => p.Id == id);
+
+            if (project == null)
             {
                 return false;
             }
+            if (!project.IsDeleted)
+            {
+                project.IsDeleted = true;
+                project.DeletedAt = DateTime.UtcNow;
+                _context.SaveChanges();
+            }
 
-            projectToDelete.IsDeleted = true;
-            projectToDelete.DeletedAt = DateTime.UtcNow;
-            _context.SaveChanges();
-            
             return true;
         }
 
