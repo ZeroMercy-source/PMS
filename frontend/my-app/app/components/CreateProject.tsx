@@ -27,7 +27,7 @@ type Priority = "Low" | "Medium" | "High" | "Urgent"
 const statusMap = { ToDO: 0, InProgress: 1, Done: 2 } as const
 const priorityMap = { Low: 0, Medium: 1, High: 2, Urgent: 3 } as const
 
-export default function CreateTask({ projectId }: { projectId: number }) {
+export default function CreateProject() {
   const router = useRouter()
 
   const [open, setOpen] = useState(false)
@@ -43,19 +43,19 @@ export default function CreateTask({ projectId }: { projectId: number }) {
     setError("")
 
     if (!title.trim()) {
-      setError("Task title is required.")
+      setError("Project title is required.")
       return
     }
 
     try {
       setLoading(true)
 
-      const res = await fetch(`/api/projects/${projectId}/tasks`, {
+      const res = await fetch(`/api/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          description,
+          title: title.trim(),
+          description: description.trim(),
           status: statusMap[status],
           priority: priorityMap[priority],
         }),
@@ -73,9 +73,9 @@ export default function CreateTask({ projectId }: { projectId: number }) {
       setOpen(false)
 
       router.refresh()
-      window.dispatchEvent(new Event("tasks:changed"))
+      window.dispatchEvent(new Event("projects:changed"))
     } catch (e: any) {
-      setError(e?.message ?? "Failed to create task. Try again.")
+      setError(e?.message ?? "Failed to create project. Try again.")
     } finally {
       setLoading(false)
     }
@@ -84,29 +84,29 @@ export default function CreateTask({ projectId }: { projectId: number }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>New Task</Button>
+        <Button>Create Projects</Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create task</DialogTitle>
+          <DialogTitle>Create project</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor={`task-title-${projectId}`}>Title</Label>
+            <Label htmlFor={`project-title`}>Title</Label>
             <Input
-              id={`task-title-${projectId}`}
+              id={`project-title`}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Add delete endpoint"
+              placeholder="e.g., Website Redesign"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`task-description-${projectId}`}>Description</Label>
+            <Label htmlFor={`project-description`}>Description</Label>
             <Textarea
-              id={`task-description-${projectId}`}
+              id={`project-description`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Short description (optional)"

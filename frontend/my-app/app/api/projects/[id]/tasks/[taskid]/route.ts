@@ -8,11 +8,12 @@ function missingBaseUrl() {
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string; taskId: string }> }
+  { params }: { params: Promise<{ id: string; taskid: string }> }
 ) {
   if (!API_BASE_URL) return missingBaseUrl()
 
-  const { id, taskId } = await params
+  const { id, taskid } = await params
+  const taskId = taskid
   const body = await req.json()
 
   const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}`, {
@@ -32,11 +33,12 @@ export async function PATCH(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: Promise<{ id: string; taskId: string }> }
+  { params }: { params: Promise<{ id: string; taskid: string }> }
 ) {
   if (!API_BASE_URL) return missingBaseUrl()
 
-  const { id, taskId } = await params
+  const { id, taskid } = await params
+  const taskId = taskid
 
   const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}`, {
     method: "DELETE",

@@ -7,11 +7,12 @@ function missingBaseUrl() {
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string; taskId: string }> }
+  { params }: { params: Promise<{ id: string; taskid: string }> }
 ) {
   if (!API_BASE_URL) return missingBaseUrl()
 
-  const { id, taskId } = await params
+  const { id, taskid } = await params
+  const taskId = taskid
 
   const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}/subtasks`, {
     cache: "no-store",
@@ -28,11 +29,12 @@ export async function GET(
 
 export async function POST(
   req: Request,
-  { params }: { params: Promise<{ id: string; taskId: string }> }
+  { params }: { params: Promise<{ id: string; taskid: string }> }
 ) {
   if (!API_BASE_URL) return missingBaseUrl()
 
-  const { id, taskId } = await params
+  const { id, taskid } = await params
+  const taskId = taskid
   const body = await req.json()
 
   const res = await fetch(`${API_BASE_URL}/projects/${id}/tasks/${taskId}/subtasks`, {

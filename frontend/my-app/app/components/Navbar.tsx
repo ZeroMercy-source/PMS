@@ -16,9 +16,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="text-sm text-muted-foreground">
-            Interview Build
-          </div>
+          <div className="text-sm text-muted-foreground">&nbsp;</div>
         </div>
       </div>
       <Separator />

@@ -137,8 +137,10 @@ export default function ProjectList() {
 
             <div className="flex items-center justify-between">
               <Badge variant="outline">{p.Priority}</Badge>
-              <EditProjectButton project={p} />
-              <DeleteProjectButton id={p.Id} />
+              <div className="flex items-center gap-1">
+                <EditProjectButton project={p} />
+                <DeleteProjectButton id={p.Id} />
+              </div>
             </div>
           </CardContent>
         </Card>
