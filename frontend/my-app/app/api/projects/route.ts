@@ -4,7 +4,7 @@ export async function GET(req: Request) {
     return new Response("API_BASE_URL is missing in .env.local", { status: 500 })
   }
 
-  // Forward query params (search/filter/priority/status) if you use them later
+  
   const url = new URL(req.url)
   const qs = url.searchParams.toString()
   const target = `${API_BASE_URL}/projects${qs ? `?${qs}` : ""}`

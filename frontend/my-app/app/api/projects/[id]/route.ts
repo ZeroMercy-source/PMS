@@ -1,4 +1,4 @@
-// app/api/projects/[id]/route.ts
+
 export async function DELETE(
   _req: Request,
   ctx: { params: Promise<{ id: string }> }
@@ -47,7 +47,7 @@ export async function PATCH(
     body: JSON.stringify(body),
   })
 
-  // If backend returns 204, don't include a body
+ 
   if (res.status === 204) {
     return new Response(null, { status: 204 })
   }
