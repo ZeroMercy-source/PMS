@@ -1,33 +1,33 @@
 trigger:
-- main
+  - main
 
 pool:
   name: Default
 
 steps:
-- task: NodeTool@0
-  inputs:
-    versionSpec: '24.x'
-  displayName: 'Install Node.js'
+  - task: NodeTool@0
+    inputs:
+      versionSpec: "20.x"
+    displayName: "Install Node.js"
 
-- script: |
-    cd frontend/my-app
-    npm ci
-    npm run build
-  displayName: 'npm install and build'
+  - script: |
+      cd frontend/my-app
+      npm ci
+      npm run build
+    displayName: "npm install and build"
 
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: 'frontend/my-app'
-    includeRootFolder: false
-    archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/web.zip'
-    replaceExistingArchive: true
-    verbose: true
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: "frontend/my-app"
+      includeRootFolder: false
+      archiveType: "zip"
+      archiveFile: "$(Build.ArtifactStagingDirectory)/web.zip"
+      replaceExistingArchive: true
+      verbose: true
 
-- task: AzureWebApp@1
-  inputs:
-    azureSubscription:  'service-connection'
-    appType: 'webApp' 
-    appName: 'web-pms'
-    package: '$(Build.ArtifactStagingDirectory)/web.zip'
+  - task: AzureWebApp@1
+    inputs:
+      azureSubscription: "service-connection"
+      appType: "webApp"
+      appName: "web-pms"
+      package: "$(Build.ArtifactStagingDirectory)/web.zip"
