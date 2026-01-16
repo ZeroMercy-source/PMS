@@ -4,22 +4,36 @@ trigger:
 pool:
   name: Default
 
+variables:
+  npm_config_cache: $(Pipeline.Workspace)/.npm
+
 steps:
   - task: NodeTool@0
     inputs:
       versionSpec: "20.x"
     displayName: "Install Node.js"
 
+  - task: Cache@2
+    inputs:
+      key: 'npm | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+      restoreKeys: |
+        npm | "$(Agent.OS)"
+      path: $(npm_config_cache)
+    displayName: "Cache npm"
+
+  - task: Cache@2
+    inputs:
+      key: 'next | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+      restoreKeys: |
+        next | "$(Agent.OS)"
+      path: "frontend/my-app/.next/cache"
+    displayName: "Cache .next/cache"
+
   - script: |
       cd frontend/my-app
       npm ci
       npm run build
-    displayName: "npm install and build"
-
-  - script: |
-      rmdir /s /q frontend\my-app\node_modules;
-    displayName: "Remove node_modules"
-    condition: succeededOrFailed()
+    displayName: "Install and build"
 
   - task: ArchiveFiles@2
     inputs:
@@ -28,7 +42,7 @@ steps:
       archiveType: "zip"
       archiveFile: "$(Build.ArtifactStagingDirectory)/web.zip"
       replaceExistingArchive: true
-      verbose: true
+    displayName: "Archive frontend"
 
   - task: AzureWebApp@1
     inputs:
@@ -36,3 +50,4 @@ steps:
       appType: "webAppLinux"
       appName: "web-pms"
       package: "$(Build.ArtifactStagingDirectory)/web.zip"
+    displayName: "Deploy to App Service"
