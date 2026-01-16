@@ -20,5 +20,5 @@ steps:
   inputs:
     azureSubscription:  service-connection
     appType: 'webApp' 
-    appName: web-pms
+    appName: 'web-pms'
     package: '$(System.DefaultWorkingDirectory)/**/*.zip'
