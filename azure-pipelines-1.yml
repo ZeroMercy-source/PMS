@@ -17,7 +17,7 @@ steps:
     displayName: "npm install and build"
 
   - script: |
-    rmdir /s /q frontend\my-app\node_modules 
+      rmdir /s /q frontend\my-app\node_modules;
     displayName: "Remove node_modules"
     condition: succeededOrFailed()
 
