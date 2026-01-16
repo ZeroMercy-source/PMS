@@ -16,6 +16,11 @@ steps:
       npm run build
     displayName: "npm install and build"
 
+  - script: |
+    rmdir /s /q frontend\my-app\node_modules 
+    displayName: "Remove node_modules"
+    condition: succeededOrFailed()
+
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: "frontend/my-app"
