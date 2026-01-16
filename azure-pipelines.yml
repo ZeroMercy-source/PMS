@@ -1,0 +1,32 @@
+trigger:
+- main
+
+pool:
+  name: Default
+
+steps:
+- task: UseDotNet@2
+  inputs:
+    packageType: sdk
+    version: '10.x'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: restore
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: publish
+    publishWebProjects: true
+    arguments: '--configuration Release --output "$(Build.ArtifactStagingDirectory)"'
+    zipAfterPublish: true
+
+
+
+- task: AzureWebApp@1
+  inputs:
+    azureSubscription: 'service-connection'
+    appType: webApp
+    appName: 'api-pms'
+    package: '$(Build.ArtifactStagingDirectory)/**/*.zip'
