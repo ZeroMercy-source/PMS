@@ -31,7 +31,7 @@ type Project = {
   Priority: Priority | string
 }
 
-const statusMap = { ToDO: 0, InProgress: 1, Done: 2, Deleted: 3 } as const
+const statusMap = { ToDo: 0, InProgress: 1, Done: 2, Deleted: 3 } as const
 const priorityMap = { Low: 0, Medium: 1, High: 2, Urgent: 3 } as const
 
 export default function EditProjectButton({ project }: { project: Project }) {
