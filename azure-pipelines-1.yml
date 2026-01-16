@@ -28,6 +28,6 @@ steps:
   - task: AzureWebApp@1
     inputs:
       azureSubscription: "service-connection"
-      appType: "webApp"
+      appType: "webAppLinux"
       appName: "web-pms"
       package: "$(Build.ArtifactStagingDirectory)/web.zip"
