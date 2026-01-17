@@ -30,10 +30,9 @@ steps:
     displayName: "Install and build"
     
   - script: |
-    dir frontend\my-app\.next
-    dir frontend\my-app\.next\standalone
+      dir frontend\my-app\.next
+      dir frontend\my-app\.next\standalone
   displayName: "Verify standalone output"
-
 
   - script: |
       rm -rf "$(Build.ArtifactStagingDirectory)/standalone"
