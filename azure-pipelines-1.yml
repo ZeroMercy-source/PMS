@@ -1,43 +1,61 @@
+# Trigger the pipeline on changes to the main branch only within the frontend/my-app directory
 trigger:
-  - main
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - frontend/my-app/**
+
+  
 # Self-hosted agents pool
 pool:
   name: Default
 
 variables:
   appRoot: frontend/my-app
-  
+  deployDir: $(Build.ArtifactStagingDirectory)\deploy
+  zipPath: $(Build.ArtifactStagingDirectory)\$(Build.BuildId).zip
 
 steps:
+
 # Set up a Node.js environment and add it to the PATH
   - task: UseNode@1
     inputs:
       version: '24.x' 
     displayName: 'Install Node 24.x on Path'
 
-
+# Cache v2
+# Cache files between runs.
+  - task: Cache@2
+    inputs:
+      key: 'npm | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+      path: '$(Pipeline.Workspace)\.npm' 
+    displayName: 'Cache NPM'
 
   - pwsh: |
       cd "$(appRoot)"
+      npm config set cache "$(Pipeline.Workspace)\.npm" --global
       npm ci
       npm run build
 
-      Remove-Item "$(Build.ArtifactStagingDirectory)\deploy" -Recurse -Force -ErrorAction SilentlyContinue
-      New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)\deploy\.next" -Force | Out-Null
+      Remove-Item "$(deployDir)" -Recurse -Force -ErrorAction SilentlyContinue
+      New-Item -ItemType Directory -Path "$(deployDir)\.next" -Force | Out-Null
 
-      Copy-Item ".next\standalone\*" "$(Build.ArtifactStagingDirectory)\deploy\" -Recurse -Force
-      Copy-Item ".next\static" "$(Build.ArtifactStagingDirectory)\deploy\.next\" -Recurse -Force
-      if (Test-Path "public") { Copy-Item "public" "$(Build.ArtifactStagingDirectory)\deploy\" -Recurse -Force }
+      Copy-Item ".next\standalone\*" "$(deployDir)\" -Recurse -Force
+      Copy-Item ".next\static" "$(deployDir)\.next\" -Recurse -Force
+      if (Test-Path "public") { Copy-Item "public" "$(deployDir)\" -Recurse -Force }
+
     displayName: "Build and stage standalone deploy folder"
 
 
 # Compress files into .7z, .tar.gz, or .zip.
   - task: ArchiveFiles@2
     inputs:
-      rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/deploy'
+      rootFolderOrFile: '$(deployDir)'
       includeRootFolder: false
       archiveType: 'zip' 
-      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip' 
+      archiveFile: '$(zipPath)'
     displayName: 'Archive files to a zip'
 
 # Publish build artifacts to Azure Pipelines
@@ -49,10 +67,10 @@ steps:
     displayName: 'Publish Artifact: ZippedArtifact to Azure Pipelines'
 
   - task: AzureWebApp@1
-    displayName: "Deploy to App Service"
     inputs:
       azureSubscription: "service-connection"
       appType: "webAppLinux"
       appName: "web-pms"
-      package: "$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip"
+      package: '$(zipPath)'
       startupCommand: "node server.js"
+    displayName: "Deploy to App Service"
