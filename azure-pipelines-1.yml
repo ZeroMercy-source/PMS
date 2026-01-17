@@ -5,6 +5,7 @@ pool:
   name: Default
 
 variables:
+  appRoot: frontend/my-app
   npm_config_cache: $(Pipeline.Workspace)/.npm
 
 steps:
@@ -15,39 +16,58 @@ steps:
 
   - task: Cache@2
     inputs:
-      key: 'npm | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+      key: 'npm | "$(Agent.OS)" | $(appRoot)/package-lock.json'
       restoreKeys: |
         npm | "$(Agent.OS)"
       path: $(npm_config_cache)
     displayName: "Cache npm"
 
-  - task: Cache@2
-    inputs:
-      key: 'next | "$(Agent.OS)" | frontend/my-app/package-lock.json'
-      restoreKeys: |
-        next | "$(Agent.OS)"
-      path: "frontend/my-app/.next/cache"
-    displayName: "Cache .next/cache"
-
   - script: |
-      cd frontend/my-app
+      cd $(appRoot)
       npm ci
       npm run build
     displayName: "Install and build"
 
-  - task: ArchiveFiles@2
+  - script: |
+      rm -rf "$(Build.ArtifactStagingDirectory)/standalone"
+      mkdir -p "$(Build.ArtifactStagingDirectory)/standalone"
+    displayName: "Prepare staging folder"
+
+  - task: CopyFiles@2
+    displayName: "Copy .next/standalone"
     inputs:
-      rootFolderOrFile: "frontend/my-app"
+      SourceFolder: "$(appRoot)/.next/standalone"
+      Contents: "**/*"
+      TargetFolder: "$(Build.ArtifactStagingDirectory)/standalone"
+
+  - task: CopyFiles@2
+    displayName: "Copy .next/static"
+    inputs:
+      SourceFolder: "$(appRoot)/.next/static"
+      Contents: "**/*"
+      TargetFolder: "$(Build.ArtifactStagingDirectory)/standalone/.next/static"
+
+  - task: CopyFiles@2
+    displayName: "Copy public"
+    inputs:
+      SourceFolder: "$(appRoot)/public"
+      Contents: "**/*"
+      TargetFolder: "$(Build.ArtifactStagingDirectory)/standalone/public"
+
+  - task: ArchiveFiles@2
+    displayName: "Zip standalone"
+    inputs:
+      rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/standalone"
       includeRootFolder: false
       archiveType: "zip"
       archiveFile: "$(Build.ArtifactStagingDirectory)/web.zip"
       replaceExistingArchive: true
-    displayName: "Archive frontend"
 
   - task: AzureWebApp@1
+    displayName: "Deploy to App Service"
     inputs:
       azureSubscription: "service-connection"
       appType: "webAppLinux"
       appName: "web-pms"
       package: "$(Build.ArtifactStagingDirectory)/web.zip"
-    displayName: "Deploy to App Service"
+      startupCommand: "node server.js"
