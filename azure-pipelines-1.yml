@@ -24,20 +24,20 @@ steps:
 
 
 # Compress files into .7z, .tar.gz, or .zip.
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: '$(appRoot)'
-    archiveType: 'zip' 
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip' 
-  displayName: 'Archive files to a zip'
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: '$(appRoot)'
+      archiveType: 'zip' 
+      archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip' 
+    displayName: 'Archive files to a zip'
 
 # Publish build artifacts to Azure Pipelines
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-    ArtifactName: 'ZippedArtifact'
-    publishLocation: 'Container' 
-  displayName: 'Publish Artifact: ZippedArtifact to Azure Pipelines'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+      ArtifactName: 'ZippedArtifact'
+      publishLocation: 'Container' 
+    displayName: 'Publish Artifact: ZippedArtifact to Azure Pipelines'
 
   - task: AzureWebApp@1
     displayName: "Deploy to App Service"
