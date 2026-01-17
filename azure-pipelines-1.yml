@@ -17,7 +17,7 @@ steps:
 
 
 
-    - pwsh: |
+  - pwsh: |
       cd "$(appRoot)"
       npm ci
       npm run build
