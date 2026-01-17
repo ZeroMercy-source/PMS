@@ -14,7 +14,6 @@ steps:
       versionSpec: "24.x"
     displayName: "Install Node.js"
 
-
   - task: Cache@2
     inputs:
       key: 'npm | "$(Agent.OS)" | $(appRoot)/package-lock.json'
@@ -28,15 +27,16 @@ steps:
       npm ci
       npm run build
     displayName: "Install and build"
-    
+
   - script: |
-      dir frontend\my-app\.next
-      dir frontend\my-app\.next\standalone
+      cd frontend\my-app
+      dir .next
+      dir .next\standalone
     displayName: "Verify standalone output"
 
   - script: |
-      rm -rf "$(Build.ArtifactStagingDirectory)/standalone"
-      mkdir -p "$(Build.ArtifactStagingDirectory)/standalone"
+      rmdir /s /q "$(Build.ArtifactStagingDirectory)\standalone"
+      mkdir "$(Build.ArtifactStagingDirectory)\standalone"
     displayName: "Prepare staging folder"
 
   - task: CopyFiles@2
