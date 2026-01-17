@@ -31,7 +31,15 @@ steps:
     inputs:
       key: 'npm | "$(Agent.OS)" | frontend/my-app/package-lock.json'
       path: '$(Pipeline.Workspace)\.npm' 
+      cacheHitVar: 'NPM_CACHE_RESTORED'
     displayName: 'Cache NPM'
+
+  - task: Cache@2
+    inputs:
+      key: 'next | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+      path: '$(System.DefaultWorkingDirectory)\frontend\my-app\.next\cache'
+      cacheHitVar: 'NEXT_CACHE_RESTORED' 
+    displayName: 'Cache Next.js'
 
   - pwsh: |
       cd "$(appRoot)"
