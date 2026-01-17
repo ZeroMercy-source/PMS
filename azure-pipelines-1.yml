@@ -1,26 +1,20 @@
 trigger:
   - main
-
+# Self-hosted agents pool
 pool:
   name: Default
 
 variables:
   appRoot: frontend/my-app
-  npm_config_cache: $(Pipeline.Workspace)/.npm
+  
 
 steps:
-  - task: NodeTool@0
+# Set up a Node.js environment and add it to the PATH
+  - task: UseNode@1
     inputs:
-      versionSpec: "24.x"
-    displayName: "Install Node.js"
+      version: '24.x' 
+    displayName: 'Install Node 24.x on Path'
 
-  - task: Cache@2
-    inputs:
-      key: 'npm | "$(Agent.OS)" | $(appRoot)/package-lock.json'
-      restoreKeys: |
-        npm | "$(Agent.OS)"
-      path: $(npm_config_cache)
-    displayName: "Cache npm"
 
   - script: |
       cd $(appRoot)
@@ -28,46 +22,22 @@ steps:
       npm run build
     displayName: "Install and build"
 
-  - script: |
-      cd frontend\my-app
-      dir .next
-      dir .next\standalone
-    displayName: "Verify standalone output"
 
-  - script: |
-      rmdir /s /q "$(Build.ArtifactStagingDirectory)\standalone"
-      mkdir "$(Build.ArtifactStagingDirectory)\standalone"
-    displayName: "Prepare staging folder"
+# Compress files into .7z, .tar.gz, or .zip.
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(appRoot)'
+    archiveType: 'zip' 
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip' 
+  displayName: 'Archive files to a zip'
 
-  - task: CopyFiles@2
-    displayName: "Copy .next/standalone"
-    inputs:
-      SourceFolder: "$(appRoot)/.next/standalone"
-      Contents: "**/*"
-      TargetFolder: "$(Build.ArtifactStagingDirectory)/standalone"
-
-  - task: CopyFiles@2
-    displayName: "Copy .next/static"
-    inputs:
-      SourceFolder: "$(appRoot)/.next/static"
-      Contents: "**/*"
-      TargetFolder: "$(Build.ArtifactStagingDirectory)/standalone/.next/static"
-
-  - task: CopyFiles@2
-    displayName: "Copy public"
-    inputs:
-      SourceFolder: "$(appRoot)/public"
-      Contents: "**/*"
-      TargetFolder: "$(Build.ArtifactStagingDirectory)/standalone/public"
-
-  - task: ArchiveFiles@2
-    displayName: "Zip standalone"
-    inputs:
-      rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/standalone"
-      includeRootFolder: false
-      archiveType: "zip"
-      archiveFile: "$(Build.ArtifactStagingDirectory)/web.zip"
-      replaceExistingArchive: true
+# Publish build artifacts to Azure Pipelines
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
+    ArtifactName: 'ZippedArtifact'
+    publishLocation: 'Container' 
+  displayName: 'Publish Artifact: ZippedArtifact to Azure Pipelines'
 
   - task: AzureWebApp@1
     displayName: "Deploy to App Service"
@@ -75,5 +45,5 @@ steps:
       azureSubscription: "service-connection"
       appType: "webAppLinux"
       appName: "web-pms"
-      package: "$(Build.ArtifactStagingDirectory)/web.zip"
-      startupCommand: "node server.js"
+      package: "$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip"
+      startupCommand: "npm run start"

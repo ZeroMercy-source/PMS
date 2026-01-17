@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/d45b4b8b-feeb-4c4d-8746-257aa4158ae7/resourceGroups/rg-pms/providers/Microsoft.Web/sites/web-pms",
+    "appService.deploySubpath": "."
+}
