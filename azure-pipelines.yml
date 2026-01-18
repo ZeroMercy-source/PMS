@@ -48,6 +48,12 @@ steps:
     zipAfterPublish: true
   displayName: 'Publish Project'
 
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(buildDir)/publish'
+    ArtifactName: 'PMSApiArtifact'
+    publishLocation: 'Container'
+  displayName: 'Publish Artifact to Azure Pipelines'
 
 - task: AzureWebApp@1
   inputs:
