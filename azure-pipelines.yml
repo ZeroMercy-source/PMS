@@ -7,7 +7,6 @@ trigger:
     include:
       - backend/src/**
 
-
 variables:
   appRoot: backend/src/PMS.Api/PMS.Api.csproj
   buildDir: $(Build.ArtifactStagingDirectory)
