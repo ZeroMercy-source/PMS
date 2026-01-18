@@ -30,7 +30,7 @@ builder.Services.AddScoped<TaskServices>();
 builder.Services.AddScoped<SubTaskServices>();
 
 var app = builder.Build();
-
+app.MapGet("/", () => "API is running");
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
