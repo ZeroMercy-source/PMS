@@ -1,5 +1,15 @@
+# Trigger the pipeline on changes to the main branch only within the backend/src/PMS.Api directory
 trigger:
-- main
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - backend/src/**
+
+variables:
+  appRoot: backend/src/PMS.Api/PMS.Api.csproj
+  buildDir: $(Build.ArtifactStagingDirectory)
 
 pool:
   name: Default
@@ -8,20 +18,35 @@ steps:
 - task: UseDotNet@2
   inputs:
     packageType: sdk
-    version: '10.x'
+    version: '10.0.x'
+  displayName: 'Install .NET 10.x SDK'
 
 - task: DotNetCoreCLI@2
   inputs:
     command: restore
-    projects: '**/*.csproj'
+    projects: '$(appRoot)'
+  displayName: 'Install Dependencies'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: build
+    projects: '$(appRoot)'
+    arguments: '--configuration Release --no-restore'
+  displayName: 'Build Project'
+
+- pwsh: |
+    Remove-Item "$(buildDir)\publish" -Recurse -Force -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path "$(buildDir)\publish" -Force | Out-Null
+  displayName: 'Prepare publish folder'
 
 - task: DotNetCoreCLI@2
   inputs:
     command: publish
-    publishWebProjects: true
-    arguments: '--configuration Release --output "$(Build.ArtifactStagingDirectory)"'
+    projects: '$(appRoot)'
+    publishWebProjects: false
+    arguments: '--configuration Release --output "$(buildDir)/publish" --no-build --no-restore'
     zipAfterPublish: true
-
+  displayName: 'Publish Project'
 
 
 - task: AzureWebApp@1
@@ -29,4 +54,5 @@ steps:
     azureSubscription: 'service-connection'
     appType: webApp
     appName: 'api-pms'
-    package: '$(Build.ArtifactStagingDirectory)/**/*.zip'
+    package: '$(buildDir)/publish/**/*.zip'
+  displayName: 'Deploy to Azure Web App'
