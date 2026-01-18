@@ -1,6 +1,5 @@
 # Trigger the pipeline on changes to the main branch only within the backend/src/PMS.Api directory
 trigger:
-  branches:
     include:
       - main
   paths:
