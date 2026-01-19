@@ -56,13 +56,10 @@ steps:
     publishLocation: 'Container'
   displayName: 'Publish SQL Bundle Artifact'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: custom
-    custom: 'exec'
-    arguments: '"$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --connection "$(ConnectionString)"'
+- pwsh: |
+    & "$(Build.ArtifactStagingDirectory)\SQL\Bundle.exe" --connection "$(ConnectionString)"
   displayName: 'Apply EF Migrations to PROD'
-
+  
 - pwsh: |
     Remove-Item "$(buildDir)\publish" -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path "$(buildDir)\publish" -Force | Out-Null
