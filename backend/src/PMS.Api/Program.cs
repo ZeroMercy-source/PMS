@@ -29,6 +29,8 @@ builder.Services.AddScoped<ProjectServices>();
 builder.Services.AddScoped<TaskServices>();
 builder.Services.AddScoped<SubTaskServices>();
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -41,5 +43,5 @@ app.UseCors("Frontend");
 
 app.UseAuthorization();
 app.MapControllers();
-
+app.UseHealthChecks("/health");
 app.Run();

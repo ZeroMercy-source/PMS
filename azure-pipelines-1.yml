@@ -1,4 +1,3 @@
-# Trigger the pipeline on changes to the main branch only within the frontend/my-app directory
 trigger:
   branches:
     include:
@@ -7,78 +6,128 @@ trigger:
     include:
       - frontend/my-app/**
 
-  
-# Self-hosted agents pool
 pool:
   name: Default
 
 variables:
   appRoot: frontend/my-app
   deployDir: $(Build.ArtifactStagingDirectory)\deploy
-  zipPath: $(Build.ArtifactStagingDirectory)\$(Build.BuildId).zip
+  zipPath: $(Build.ArtifactStagingDirectory)\web.zip
 
-steps:
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build and package
+    steps:
+    - task: UseNode@1
+      inputs:
+        version: '24.x'
+      displayName: Install Node
 
-# Set up a Node.js environment and add it to the PATH
-  - task: UseNode@1
-    inputs:
-      version: '24.x' 
-    displayName: 'Install Node 24.x on Path'
+    - task: Cache@2
+      inputs:
+        key: 'npm | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+        path: '$(Pipeline.Workspace)\.npm'
+        cacheHitVar: 'NPM_CACHE_RESTORED'
+      displayName: Cache NPM
 
-# Cache v2
-# Cache files between runs.
-  - task: Cache@2
-    inputs:
-      key: 'npm | "$(Agent.OS)" | frontend/my-app/package-lock.json'
-      path: '$(Pipeline.Workspace)\.npm' 
-      cacheHitVar: 'NPM_CACHE_RESTORED'
-    displayName: 'Cache NPM'
+    - task: Cache@2
+      inputs:
+        key: 'next | "$(Agent.OS)" | frontend/my-app/package-lock.json'
+        path: '$(System.DefaultWorkingDirectory)\frontend\my-app\.next\cache'
+        cacheHitVar: 'NEXT_CACHE_RESTORED'
+      displayName: Cache Next.js
 
-  - task: Cache@2
-    inputs:
-      key: 'next | "$(Agent.OS)" | frontend/my-app/package-lock.json'
-      path: '$(System.DefaultWorkingDirectory)\frontend\my-app\.next\cache'
-      cacheHitVar: 'NEXT_CACHE_RESTORED' 
-    displayName: 'Cache Next.js'
+    - pwsh: |
+        cd "$(appRoot)"
+        npm config set cache "$(Pipeline.Workspace)\.npm" --global
+        npm ci
+        npm run build
 
-  - pwsh: |
-      cd "$(appRoot)"
-      npm config set cache "$(Pipeline.Workspace)\.npm" --global
-      npm ci
-      npm run build
+        Remove-Item "$(deployDir)" -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Path "$(deployDir)\.next" -Force | Out-Null
 
-      Remove-Item "$(deployDir)" -Recurse -Force -ErrorAction SilentlyContinue
-      New-Item -ItemType Directory -Path "$(deployDir)\.next" -Force | Out-Null
+        Copy-Item ".next\standalone\*" "$(deployDir)\" -Recurse -Force
+        Copy-Item ".next\static" "$(deployDir)\.next\" -Recurse -Force
+        if (Test-Path "public") { Copy-Item "public" "$(deployDir)\" -Recurse -Force }
+      displayName: Build and stage standalone output
 
-      Copy-Item ".next\standalone\*" "$(deployDir)\" -Recurse -Force
-      Copy-Item ".next\static" "$(deployDir)\.next\" -Recurse -Force
-      if (Test-Path "public") { Copy-Item "public" "$(deployDir)\" -Recurse -Force }
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(deployDir)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: '$(zipPath)'
+      displayName: Zip deploy package
 
-    displayName: "Build and stage standalone deploy folder"
+    - publish: '$(zipPath)'
+      artifact: web
+      displayName: 'Publish web artifact'
 
+- stage: DeployToStaging
+  displayName: Deploy to Staging
+  dependsOn: Build
+  jobs:
+  - deployment: DeployStaging
+    displayName: Deploy web to staging
+    environment: staging
+    workspace: 
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: web
 
-# Compress files into .7z, .tar.gz, or .zip.
-  - task: ArchiveFiles@2
-    inputs:
-      rootFolderOrFile: '$(deployDir)'
-      includeRootFolder: false
-      archiveType: 'zip' 
-      archiveFile: '$(zipPath)'
-    displayName: 'Archive files to a zip'
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: "service-connection"
+              appType: "webAppLinux"
+              appName: "web-pms-staging"
+              package: '$(Pipeline.Workspace)\web\web.zip'
+              startupCommand: "node server.js"
+            displayName: Deploy to Staging
 
-# Publish build artifacts to Azure Pipelines
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)' 
-      ArtifactName: 'ZippedArtifact'
-      publishLocation: 'Container' 
-    displayName: 'Publish Artifact: ZippedArtifact to Azure Pipelines'
+          - pwsh: |
+              $url = "https://web-pms-staging-e9bqgmdebqejfedz.canadacentral-01.azurewebsites.net/"
+              $max = 12
+              for ($i = 1; $i -le $max; $i++) {
+                try {
+                  $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10
+                  if ($resp.StatusCode -eq 200) { Write-Host "Web healthy"; exit 0 }
+                  Write-Host "Status: $($resp.StatusCode)"
+                } catch {
+                  Write-Host "Not ready: $($_.Exception.Message)"
+                }
+                Start-Sleep -Seconds 5
+              }
+              throw "Health check failed."
+            displayName: Health check (staging)
 
-  - task: AzureWebApp@1
-    inputs:
-      azureSubscription: "service-connection"
-      appType: "webAppLinux"
-      appName: "web-pms"
-      package: '$(zipPath)'
-      startupCommand: "node server.js"
-    displayName: "Deploy to App Service"
+- stage: DeployToProduction
+  displayName: Deploy to Production
+  dependsOn: DeployToStaging
+  jobs:
+  - deployment: DeployProd
+    displayName: Deploy web to production
+    environment: production
+    workspace: 
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: web
+
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: "service-connection"
+              appType: "webAppLinux"
+              appName: "web-pms"
+              package: '$(Pipeline.Workspace)\web\web.zip'
+              startupCommand: "node server.js"
+            displayName: Deploy to Production
