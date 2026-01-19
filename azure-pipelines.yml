@@ -62,7 +62,7 @@ steps:
 
     $max = 10
     for ($i = 1; $i -le $max; $i++) {
-      Write-Host "Attempt $i/$max: running EF migrations bundle..."
+      Write-Host "Attempt ${i}/${max}: running EF migrations bundle..."
       & $bundle --connection $conn
 
       if ($LASTEXITCODE -eq 0) {
