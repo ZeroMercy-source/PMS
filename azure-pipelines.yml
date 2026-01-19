@@ -1,4 +1,3 @@
-# Trigger the pipeline on changes to the main branch only within the backend/src/PMS.Api directory
 trigger:
   branches:
     include:
@@ -7,102 +6,226 @@ trigger:
     include:
       - backend/src/**
 
-variables:
-  appRoot: backend/src/PMS.Api/PMS.Api.csproj
-  buildDir: $(Build.ArtifactStagingDirectory)
-
 pool:
   name: Default
 
-steps:
-- task: UseDotNet@2
-  inputs:
-    packageType: sdk
-    version: '10.0.x'
-  displayName: 'Install .NET 10.x SDK'
+variables:
+  appRoot: backend/src/PMS.Api/PMS.Api.csproj
+  deployDir: $(Build.ArtifactStagingDirectory)
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: restore
-    projects: '$(appRoot)'
-  displayName: 'Install Dependencies'
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build and package
+    steps:
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: '10.0.x'
+      displayName: 'Install .NET 10.x SDK'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: build
-    projects: '$(appRoot)'
-    arguments: '--configuration Release --no-restore'
-  displayName: 'Build Project'
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: restore
+        projects: '$(appRoot)'
+      displayName: 'Install Dependencies'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: build
+        projects: '$(appRoot)'
+        arguments: '--configuration Release --no-restore'
+      displayName: 'Build Project'
 
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: custom
-    custom: 'tool'
-    arguments: 'install --global dotnet-ef'
-  displayName: 'Install EF Tool'
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: custom
+        custom: 'tool'
+        arguments: 'install --global dotnet-ef'
+      displayName: 'Install EF Tool'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: custom
-    custom: 'ef '
-    arguments: migrations bundle --self-contained --project "$(appRoot)" --startup-project "$(appRoot)" -r win-x64 -o "$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --verbose
-  displayName: 'Create EF Migrations Bundle'
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: custom
+        custom: 'ef '
+        arguments: migrations bundle --self-contained --project "$(appRoot)" --startup-project "$(appRoot)" -r win-x64 -o "$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --verbose
+      displayName: 'Create EF Migrations Bundle'
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)/SQL'
-    ArtifactName: 'SQL'
-    publishLocation: 'Container'
-  displayName: 'Publish SQL Bundle Artifact'
 
-- pwsh: |
-    $bundle = "$(Build.ArtifactStagingDirectory)\SQL\Bundle.exe"
-    $conn   = "$(ConnectionString)"
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/SQL'
+        ArtifactName: 'SQL'
+        publishLocation: 'Container'
+      displayName: 'Publish SQL Bundle Artifact'
 
-    $max = 10
-    for ($i = 1; $i -le $max; $i++) {
-      Write-Host "Attempt ${i}/${max}: running EF migrations bundle..."
-      & $bundle --connection $conn
 
-      if ($LASTEXITCODE -eq 0) {
-        Write-Host "Success."
-        exit 0
-      }
+    - pwsh: |
+        Remove-Item "$(deployDir)\publish" -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Path "$(deployDir)\publish" -Force | Out-Null
+      displayName: 'Prepare publish folder'
 
-      Write-Host "Failed with exit code $LASTEXITCODE. Waiting then retrying..."
-      Start-Sleep -Seconds (8 * $i)
-    }
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: publish
+        projects: '$(appRoot)'
+        publishWebProjects: false
+        arguments: '--configuration Release --output "$(deployDir)/publish" --no-build --no-restore'
+        zipAfterPublish: true
+      displayName: 'Publish Project'
 
-    throw "Bundle failed after $max attempts."
-  displayName: 'Apply EF Migrations to PROD (retry)'
 
-  
-- pwsh: |
-    Remove-Item "$(buildDir)\publish" -Recurse -Force -ErrorAction SilentlyContinue
-    New-Item -ItemType Directory -Path "$(buildDir)\publish" -Force | Out-Null
-  displayName: 'Prepare publish folder'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(deployDir)/publish'
+        ArtifactName: 'PMSApiArtifact'
+        publishLocation: 'Container'
+      displayName: 'Publish Artifact to Azure Pipelines'
+      
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: publish
-    projects: '$(appRoot)'
-    publishWebProjects: false
-    arguments: '--configuration Release --output "$(buildDir)/publish" --no-build --no-restore'
-    zipAfterPublish: true
-  displayName: 'Publish Project'
+- stage: ApplyMigrationsToStaging
+  displayName: Apply Migrations to Staging
+  dependsOn: Build
+  jobs:
+  - deployment: DeployStaging
+    displayName: Deploy API to Staging
+    environment: API-Staging
+    workspace: 
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: SQL
 
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(buildDir)/publish'
-    ArtifactName: 'PMSApiArtifact'
-    publishLocation: 'Container'
-  displayName: 'Publish Artifact to Azure Pipelines'
+          - pwsh: |
+              $bundle = "$(Pipeline.Workspace)\SQL\Bundle.exe"
+              $conn   = "$(StagingConnectionString)"
 
-- task: AzureWebApp@1
-  inputs:
-    azureSubscription: 'service-connection'
-    appType: webApp
-    appName: 'api-pms'
-    package: '$(buildDir)/publish/**/*.zip'
-  displayName: 'Deploy to Azure Web App'
+              $max = 10
+              for ($i = 1; $i -le $max; $i++) {
+                Write-Host "Attempt ${i}/${max}: running EF migrations bundle..."
+                & $bundle --connection $conn
+
+                if ($LASTEXITCODE -eq 0) {
+                  Write-Host "Success."
+                  exit 0
+                }
+
+                Write-Host "Failed with exit code $LASTEXITCODE. Waiting then retrying..."
+                Start-Sleep -Seconds (8 * $i)
+              }
+
+              throw "Bundle failed after $max attempts."
+            displayName: 'Apply EF Migrations to STAGING (retry)'
+
+
+
+
+- stage: APIDeployToStaging
+  displayName: Deploy API to Staging
+  dependsOn: ApplyMigrationsToStaging
+  jobs:
+  - deployment: DeployStaging
+    displayName: Deploy API to staging
+    environment: backenedstaging
+    workspace: 
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: PMSApiArtifact
+
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'service-connection'
+              appType: webApp
+              appName: 'api-pms-staging'
+              package: '$(Pipeline.Workspace)/PMSApiArtifact/**/*.zip'
+            displayName: 'Deploy to Staging'
+
+
+          - pwsh: |
+              $url = "https://api-pms-staging-grc5e2f6e3a3bpf5.canadacentral-01.azurewebsites.net/health"
+              $max = 12
+              for ($i = 1; $i -le $max; $i++) {
+                try {
+                  $resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 10
+                  if ($resp.StatusCode -eq 200) { Write-Host "Web healthy"; exit 0 }
+                  Write-Host "Status: $($resp.StatusCode)"
+                } catch {
+                  Write-Host "Not ready: $($_.Exception.Message)"
+                }
+                Start-Sleep -Seconds 5
+              }
+              throw "Health check failed."
+            displayName: Health check (staging)
+
+
+- stage: ApplyMigrationsToProduction
+  displayName: Apply Migrations to Production
+  dependsOn: APIDeployToStaging
+  jobs:
+  - deployment: DeployProd
+    displayName: Deploy API to Production
+    environment: API-Production
+    workspace: 
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: SQL
+
+          - pwsh: |
+              $bundle = "$(Pipeline.Workspace)\SQL\Bundle.exe"
+              $conn   = "$(ConnectionString)"
+
+              $max = 10
+              for ($i = 1; $i -le $max; $i++) {
+                Write-Host "Attempt ${i}/${max}: running EF migrations bundle..."
+                & $bundle --connection $conn
+
+                if ($LASTEXITCODE -eq 0) {
+                  Write-Host "Success."
+                  exit 0
+                }
+
+                Write-Host "Failed with exit code $LASTEXITCODE. Waiting then retrying..."
+                Start-Sleep -Seconds (8 * $i)
+              }
+
+              throw "Bundle failed after $max attempts."
+            displayName: 'Apply EF Migrations to PRODUCTION (retry)'
+
+
+- stage: APIDeployToProduction
+  displayName: Deploy API to Production
+  dependsOn: ApplyMigrationsToProduction
+  jobs:
+  - deployment: DeployProd
+    displayName: Deploy API to production
+    environment: backendprod
+    workspace: 
+      clean: all
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: PMSApiArtifact
+
+          - task: AzureWebApp@1
+            inputs:
+              azureSubscription: 'service-connection'
+              appType: webApp
+              appName: 'api-pms'
+              package: '$(Pipeline.Workspace)/PMSApiArtifact/**/*.zip'
+            displayName: 'Deploy to Azure Web App'
