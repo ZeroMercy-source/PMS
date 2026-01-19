@@ -72,7 +72,7 @@ stages:
   jobs:
   - deployment: DeployStaging
     displayName: Deploy web to staging
-    environment: staging
+    environment: frontendstaging
     workspace: 
       clean: all
     strategy:
@@ -113,7 +113,7 @@ stages:
   jobs:
   - deployment: DeployProd
     displayName: Deploy web to production
-    environment: production
+    environment: frontendprod
     workspace: 
       clean: all
     strategy:
