@@ -92,7 +92,7 @@ stages:
   jobs:
   - deployment: DeployStaging
     displayName: Deploy API to Staging
-    environment: API-Staging
+    environment: migrationstaging
     workspace: 
       clean: all
     strategy:
@@ -174,7 +174,7 @@ stages:
   jobs:
   - deployment: DeployProd
     displayName: Deploy API to Production
-    environment: API-Production
+    environment: migrationprod
     workspace: 
       clean: all
     strategy:
