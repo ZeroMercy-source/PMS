@@ -46,7 +46,7 @@ steps:
   inputs:
     command: custom
     custom: 'ef '
-    arguments: migrations bundle --project "$(appRoot)" --startup-project "$(appRoot)" -r win-x64 -o "$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --verbose
+    arguments: migrations bundle --self-contained --project "$(appRoot)" --startup-project "$(appRoot)" -r win-x64 -o "$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --verbose
   displayName: 'Create EF Migrations Bundle'
 
 - task: PublishBuildArtifacts@1
@@ -62,7 +62,7 @@ steps:
     custom: 'exec'
     arguments: '"$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --connection "$(ConnectionString)"'
   displayName: 'Apply EF Migrations to PROD'
-  
+
 - pwsh: |
     Remove-Item "$(buildDir)\publish" -Recurse -Force -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Path "$(buildDir)\publish" -Force | Out-Null
