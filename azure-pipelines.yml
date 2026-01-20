@@ -53,10 +53,7 @@ stages:
         command: custom
         custom: 'ef '
         arguments: migrations bundle --self-contained --project "$(appRoot)" --startup-project "$(appRoot)" -r win-x64 -o "$(Build.ArtifactStagingDirectory)/SQL/Bundle.exe" --verbose
-      env:
-        ConnectionStrings__DefaultConnection: $(StagingConnectionString)
-
-
+   
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)/SQL'

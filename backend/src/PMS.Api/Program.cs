@@ -7,8 +7,7 @@ using HealthChecks.UI.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 builder.Services.AddDbContext<PmsDbContext>(options => options.UseSqlServer(connectionString));
 builder.Services.AddHealthChecks().AddSqlServer(connectionString);
