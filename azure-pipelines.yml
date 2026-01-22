@@ -65,7 +65,7 @@ stages:
     - pwsh: |
         Remove-Item "$(deployDir)\publish" -Recurse -Force -ErrorAction SilentlyContinue
         New-Item -ItemType Directory -Path "$(deployDir)\publish" -Force | Out-Null
-      displayName: 'Prepare publish folder'
+      displayName: 'Prepare deploy folder'
 
     - task: DotNetCoreCLI@2
       inputs:
@@ -74,7 +74,7 @@ stages:
         publishWebProjects: false
         arguments: '--configuration Release --output "$(deployDir)/publish" --no-build --no-restore'
         zipAfterPublish: true
-      displayName: 'Publish Project'
+      displayName: 'Project Artifact'
 
 
     - task: PublishBuildArtifacts@1
@@ -90,7 +90,7 @@ stages:
   dependsOn: Build
   jobs:
   - deployment: DeployStaging
-    displayName: Deploy API to Staging
+    displayName: Staging EF Migrations
     environment: migrationstaging
     workspace: 
       clean: all
@@ -120,7 +120,7 @@ stages:
               }
 
               throw "Bundle failed after $max attempts."
-            displayName: 'Apply EF Migrations to STAGING (retry)'
+            displayName: 'Apply EF Migrations to STAGING'
 
 
 
@@ -164,15 +164,15 @@ stages:
                 Start-Sleep -Seconds 5
               }
               throw "Health check failed."
-            displayName: Health check (staging)
+            displayName: 'Health check (staging)'
 
 
 - stage: ApplyMigrationsToProduction
   displayName: Apply Migrations to Production
   dependsOn: APIDeployToStaging
-  jobs:
+  jobs: nm
   - deployment: DeployProd
-    displayName: Deploy API to Production
+    displayName: Production EF Migrations
     environment: migrationprod
     workspace: 
       clean: all
