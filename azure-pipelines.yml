@@ -170,7 +170,7 @@ stages:
 - stage: ApplyMigrationsToProduction
   displayName: Apply Migrations to Production
   dependsOn: APIDeployToStaging
-  jobs: nm
+  jobs:
   - deployment: DeployProd
     displayName: Production EF Migrations
     environment: migrationprod
